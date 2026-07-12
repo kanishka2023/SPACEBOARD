@@ -68,6 +68,6 @@ Then open `http://localhost:8080` in a browser that supports `getUserMedia` (Chr
 
 ## 🙏 Why this exists
 
-I made this at the intersection of two things I love — Hindustani classical music and building things with code — mostly because I wanted to know if it was possible, and the process of getting hand-tracking, audio synthesis, and a raga-aware note system to actually talk to each other in real time was genuinely one of the most rewarding builds I've done. If you try it out and something about the raga mapping or the gesture feel resonates (or doesn't), I'd love to hear about it.
+I wanted to create Bass-line for my Sitar compositions, since this Indian instrument only covers the mid and high pitch regions mostly,so just thought of making something at the intersection of two things I love — Indian classical music and building things — mostly because I wanted to know if it was possible, and the process of getting hand-tracking, audio synthesis, and a raga-aware note system to actually talk to each other in real time was genuinely one of the most rewarding builds I've done. If you try it out and something about the raga mapping or the gesture feel resonates (or doesn't), I'd love to hear about it.
 
 ---
