@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Air Instrument — Sargam</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #080810;
+    color: #e8e6f0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Info button + nudge tooltip ── */
+  .info-btn-wrap { position: fixed; top: 20px; right: 20px; z-index: 25; }
+  .about-btn-wrap { position: fixed; top: 20px; left: 20px; z-index: 25; }
+  .info-btn {
+    width: 30px; height: 30px; border-radius: 50%;
+    border: 1px solid #4a3a90; background: #12103a; color: #a990f5;
+    font-size: 1.05rem; font-weight: 700;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    padding: 0; line-height: 1; transition: background 0.15s, box-shadow 0.15s;
+  }
+  .info-btn:hover { background: #251858; box-shadow: 0 0 10px rgba(169,144,245,0.5); }
+
+  .info-nudge {
+    position: absolute; top: 50%; right: calc(100% + 14px); transform: translateY(-50%);
+    background: #1a1440; border: 1.5px solid #5a4ab0; border-radius: 16px;
+    padding: 13px 34px 13px 20px; color: #e8e0ff; font-size: 1.05rem;
+    white-space: nowrap; box-shadow: 0 6px 22px rgba(0,0,0,0.5), 0 0 18px rgba(169,144,245,0.25);
+    z-index: 30; animation: nudgeIn 0.35s ease-out;
+  }
+  .info-nudge::before {
+    content: ''; position: absolute; top: 50%; right: -7px; margin-top: -7px;
+    width: 14px; height: 14px; background: #1a1440;
+    border-right: 1.5px solid #5a4ab0; border-bottom: 1.5px solid #5a4ab0;
+    transform: rotate(-45deg);
+  }
+  .info-nudge-close {
+    position: absolute; top: 8px; right: 10px; width: 20px; height: 20px;
+    border: none; background: none; color: #a090d0; font-size: 1.05rem;
+    cursor: pointer; line-height: 1; padding: 0;
+  }
+  .info-nudge-close:hover { color: #fff; }
+  .info-nudge.hidden { display: none; }
+  @keyframes nudgeIn {
+    from { opacity: 0; transform: translateY(-50%) translateX(6px); }
+    to   { opacity: 1; transform: translateY(-50%) translateX(0); }
+  }
+  @keyframes nudgeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  .info-nudge.fading { animation: nudgeOut 0.3s ease-in forwards; }
+
+  /* ── Learn modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(4, 6, 12, 0.7);
+    display: none; align-items: center; justify-content: center;
+    padding: 24px; z-index: 100;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    width: 100%; max-width: 380px; max-height: 88vh; overflow-y: auto;
+    background: #171225; border: 1px solid #3a2f70; border-radius: 16px;
+    padding: 24px; color: #eef0fb;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .modal-header h2 { margin: 0; font-size: 18px; font-weight: 500; color: #e8e0ff; }
+  .modal-close {
+    background: none; border: none; color: #9a9fc0; cursor: pointer;
+    width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+  }
+  .modal-close:hover { color: #fff; background: rgba(169,144,245,0.12); }
+
+  .step-list { display: flex; flex-direction: column; gap: 16px; }
+  .step { display: flex; gap: 12px; }
+  .step-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: rgba(169,144,245,0.16); color: #a990f5;
+    flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  }
+  .step-icon svg { width: 18px; height: 18px; }
+  .step-title { font-weight: 500; font-size: 14px; margin: 0 0 2px; color: #eef0fb; }
+  .step-desc { font-size: 13px; color: #9a9fc0; margin: 0; line-height: 1.5; }
+  .callout { font-size: 12px; color: #6b7093; margin: 6px 0 0; line-height: 1.5; padding-left: 44px; }
+
+  .customize-section { margin-top: 18px; padding-top: 16px; border-top: 1px solid #2a2f45; }
+  .customize-heading { font-weight: 500; font-size: 14px; color: #9a9fc0; margin: 0; }
+  .customize-list { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+  .customize-list .step-icon { background: none; color: #9a9fc0; width: 24px; height: 24px; }
+  .customize-list .step-icon svg { width: 20px; height: 20px; }
+
+  .about-list { display: flex; flex-direction: column; gap: 18px; }
+  .about-list .step-desc { line-height: 1.6; }
+
+  .tip {
+    margin-top: 18px; padding-top: 16px; border-top: 1px solid #2a2f45;
+    font-size: 13px; color: #9a9fc0; line-height: 1.6; display: flex; gap: 8px;
+  }
+  .tip svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; color: #a990f5; }
+
+  /* ── Main area ── */
+  .main {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transform: scaleX(-1);
+  }
+
+  canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+
+  /* ── Side panels (overlaid on video) ── */
+  .side-panel {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(10,8,28,0.82);
+    border: 1px solid #2a1f5a;
+    border-radius: 14px;
+    padding: 12px 10px;
+    backdrop-filter: blur(8px);
+    z-index: 5;
+    min-width: 90px;
+  }
+  .side-panel.left  { left: 12px; }
+  .side-panel.right { right: 12px; }
+
+  .panel-title {
+    font-size: 0.62rem; color: #6a5aaa; text-transform: uppercase;
+    letter-spacing: 0.1em; text-align: center; margin-bottom: 10px;
+  }
+
+  /* Transpose */
+  .transpose-display {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .transpose-val {
+    font-size: 1.5rem; font-weight: 700; color: #c8b8f8;
+    min-width: 48px; text-align: center;
+  }
+  .transpose-scale {
+    font-size: 0.7rem; color: #9080c0; text-align: center; margin-bottom: 4px;
+  }
+  .t-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid #4a3a90; background: #1a1040;
+    color: #a990f5; font-size: 1.2rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .t-btn:hover { background: #251858; }
+  .t-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Octave toggles */
+  .octave-panel {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #2a1f5a;
+    display: flex; flex-direction: column; gap: 8px; align-items: center;
+  }
+  .octave-toggle {
+    width: 44px; height: 32px; border-radius: 8px;
+    border: 1px solid #3a2f70; background: #12103a;
+    color: #7060b0; font-size: 0.85rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; user-select: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+  .octave-toggle:hover { border-color: #7060c0; }
+  .octave-toggle.on {
+    background: #4a3ad0; color: #f0ecff; border-color: #a990f5;
+    box-shadow: 0 0 10px rgba(169,144,245,0.6);
+  }
+  .octave-toggle.on.locked {
+    box-shadow: 0 0 2px rgba(169,144,245,0.15);
+  }
+  .octave-toggle.off { opacity: 0.45; }
+
+  /* Note box (hidden notes) */
+  .note-box {
+    display: flex; flex-direction: column; gap: 5px; align-items: center;
+  }
+  .box-note {
+    width: 38px; height: 38px; border-radius: 50%;
+    border: 1px solid #7060c0; background: #241a5c;
+    color: #d8c8ff; font-size: 0.82rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; user-select: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+    box-shadow: 0 0 8px rgba(169,144,245,0.45);
+  }
+  .box-note:hover {
+    background: #4a3ad0; color: #f0ecff; border-color: #a990f5;
+    box-shadow: 0 0 12px rgba(169,144,245,0.75);
+  }
+
+  /* ── Bottom strip: now-playing ── */
+  .nowplaying {
+    position: absolute;
+    bottom: 10px; left: 50%; transform: translateX(-50%);
+    background: rgba(10,8,28,0.75);
+    border: 1px solid #2a1f5a;
+    border-radius: 10px;
+    padding: 5px 20px;
+    text-align: center;
+    backdrop-filter: blur(6px);
+    z-index: 5;
+    pointer-events: none;
+  }
+  .nowplaying .np-label { font-size: 0.6rem; color: #4a3a80; letter-spacing: 0.1em; text-transform: uppercase; }
+  .nowplaying .np-note  { font-size: 1.6rem; font-weight: 700; color: #c8b8f8; min-width: 60px; min-height: 2rem; }
+
+  /* ── Start button overlay ── */
+  .start-overlay {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background: rgba(8,8,16,0.85);
+    z-index: 20; text-align: center;
+  }
+  .start-overlay h2 {
+    color: #e8e0ff; font-size: 3rem; font-weight: 700; letter-spacing: 0.08em;
+    margin-bottom: 10px; text-shadow: 0 0 24px rgba(169,144,245,0.5);
+  }
+  .start-overlay .tagline {
+    color: #a090d0; font-style: italic; font-size: 1rem; font-weight: 300;
+    margin-bottom: 32px; letter-spacing: 0.02em;
+  }
+  #startBtn {
+    padding: 12px 36px; background: #1a1040;
+    border: 1px solid #4a3a90; border-radius: 10px; color: #a990f5;
+    font-size: 1rem; cursor: pointer; transition: background 0.2s;
+  }
+  #startBtn:hover { background: #251858; }
+  #startBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<!-- About button — explains the reasoning behind the customize controls -->
+<div class="about-btn-wrap">
+  <button class="info-btn" id="aboutBtn" title="Why Customize?" aria-label="Why Customize?">i</button>
+</div>
+
+<!-- Learn button — floats in the top-right corner -->
+<div class="info-btn-wrap">
+  <button class="info-btn" id="infoBtn" title="Learn how to play" aria-label="Learn how to play">?</button>
+  <div class="info-nudge hidden" id="infoNudge">
+    <button class="info-nudge-close" id="infoNudgeClose" aria-label="Dismiss">×</button>
+    New here? Learn how to play!
+  </div>
+</div>
+
+<!-- Learn modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <h2 id="modalTitle">How to play</h2>
+      <button class="modal-close" id="modalClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 6 L18 18"/>
+          <path d="M18 6 L6 18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="step-list">
+      <div class="step">
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9"/>
+            <circle cx="12" cy="12" r="5"/>
+            <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none"/>
+            <path d="M12 1 L12 4"/>
+            <path d="M12 20 L12 23"/>
+            <path d="M1 12 L4 12"/>
+            <path d="M20 12 L23 12"/>
+          </svg>
+        </div>
+        <div>
+          <p class="step-title">1. Aim before you pinch</p>
+          <p class="step-desc">Point your middle fingertip at any bar — each one is a note (S R G m P D N...). That's the note you'll play.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 11.5V5a2 2 0 0 1 4 0v6.5" />
+            <path d="M14 11.5V8.5a1.5 1.5 0 0 1 3 0V13" />
+            <path d="M17 13v-2.5a1.5 1.5 0 0 1 3 0v4" />
+            <path d="M20 14.5v1a6 6 0 0 1-6 6h-4a6 6 0 0 1-6-6v-2a2.5 2.5 0 0 1 2.5-2.5H10" />
+          </svg>
+        </div>
+        <div>
+          <p class="step-title">2. Pinch to play</p>
+          <p class="step-desc">Touch your index and middle fingertip together to sound the note you're aiming at. Release to stop.</p>
+        </div>
+      </div>
+      <p class="callout">Move to a new bar while still pinching, and it retriggers — the new note takes over right away.</p>
+
+      <div class="step">
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="9.5"/>
+            <path d="M9 16.5 L9 7.5"/>
+            <path d="M6.5 10 L9 7.5 L11.5 10"/>
+            <path d="M15 7.5 L15 16.5"/>
+            <path d="M12.5 14 L15 16.5 L17.5 14"/>
+          </svg>
+        </div>
+        <div>
+          <p class="step-title">3. Up is louder, down is softer</p>
+          <p class="step-desc">Move your pinched fingertip up or down to control volume — this works all the time, even before you pinch, so you can set your level first.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 4v15" />
+            <path d="M12 4C10 4 8.5 5 8.5 7v4L6.5 16A2.5 2.5 0 0 0 9 19h3" />
+            <path d="M12 4c2 0 3.5 1 3.5 3v4l2 5a2.5 2.5 0 0 1-2.5 3h-3" />
+            <path d="M9 19v1a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-1" />
+          </svg>
+        </div>
+        <div>
+          <p class="step-title">4. Two hands, two notes</p>
+          <p class="step-desc">Each hand plays and controls volume independently — hold a note in each hand at once.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="customize-section">
+      <p class="customize-heading">Customize</p>
+
+      <div class="customize-list">
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="5" width="20" height="14" rx="2"/>
+              <path d="M6 5v14"/>
+              <path d="M10 5v14"/>
+              <path d="M14 5v14"/>
+              <path d="M18 5v14"/>
+              <rect x="4" y="5" width="4" height="8" fill="currentColor"/>
+              <rect x="12" y="5" width="4" height="8" fill="currentColor"/>
+            </svg>
+          </div>
+          <div>
+            <p class="step-title">Octave range (L / U)</p>
+            <p class="step-desc">Toggle the Lower and Upper octave rows on or off from the left panel. At least one must stay on.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 8 L6 16"/>
+              <path d="M2 12 L10 12"/>
+              <path d="M14 12 L22 12"/>
+            </svg>
+          </div>
+          <div>
+            <p class="step-title">Transpose</p>
+            <p class="step-desc">Shift every note up or down in semitones upto:(-6)/(+6). Base Scale: C</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="step-title">Filter your notes</p>
+            <p class="step-desc">Tap any bar to tuck it away into the side box if you don't need it. Tap it again in the box to bring it back — handy for practicing with just a few notes, like S R G.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tip">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18 L15 18"/>
+        <path d="M10 21 L14 21"/>
+        <path d="M12 3 C8 3 6 6 6 9 C6 12 8 13 9 15 L15 15 C16 13 18 12 18 9 C18 6 16 3 12 3 Z"/>
+      </svg>
+      <span><strong>First time? Start simple.</strong> Hide everything except S R G, pinch to sound one, and get a feel for volume with your fingertip height before turning octaves and transpose back on.</span>
+    </div>
+  </div>
+</div>
+
+<!-- About modal — reasoning behind the customize controls -->
+<div class="modal-overlay" id="aboutOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="aboutModalTitle">
+    <div class="modal-header">
+      <h2 id="aboutModalTitle">Why Customization?</h2>
+      <button class="modal-close" id="aboutModalClose" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 6 L18 18"/>
+          <path d="M18 6 L6 18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="about-list">
+      <div class="step">
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="5" width="20" height="14" rx="2"/>
+            <path d="M6 5v14"/>
+            <path d="M10 5v14"/>
+            <path d="M14 5v14"/>
+            <path d="M18 5v14"/>
+            <rect x="4" y="5" width="4" height="8" fill="currentColor"/>
+            <rect x="12" y="5" width="4" height="8" fill="currentColor"/>
+          </svg>
+        </div>
+        <div>
+          <p class="step-title">Octave range (L / U)</p>
+          <p class="step-desc">Not every piece needs both octaves. Pick Lower or Upper to keep your workspace focused on the range you're actually playing in.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8 L6 16"/>
+            <path d="M2 12 L10 12"/>
+            <path d="M14 12 L22 12"/>
+          </svg>
+        </div>
+        <div>
+          <p class="step-title">Transpose</p>
+          <p class="step-desc">Shift every note by semitones, −6 to +6 — the full range of Western transposition. Play any composition in the key it needs, with the same finger positions.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="step-title">Filter notes</p>
+          <p class="step-desc">Omit any note your composition never uses to unclutter the screen — this removes it from both octaves at once. Helps most when staying specific to a Raga.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main fullscreen area -->
+<div class="main" id="mainArea">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
+
+  <!-- Start overlay -->
+  <div class="start-overlay" id="startOverlay">
+    <h2>AIRBOARD</h2>
+    <p class="tagline">Where melody stays on your fingertips</p>
+    <button id="startBtn" disabled>Start Camera</button>
+  </div>
+
+  <!-- Left panel: Transpose -->
+  <div class="side-panel left">
+    <div class="panel-title">Transpose</div>
+    <div class="transpose-display">
+      <button class="t-btn" id="tUp">+</button>
+      <div class="transpose-val" id="tVal">0</div>
+      <div class="transpose-scale" id="tScale">Sa = C</div>
+      <button class="t-btn" id="tDown">−</button>
+    </div>
+    <div class="octave-panel">
+      <div class="octave-toggle on" id="octLower" title="Lower octave">L</div>
+      <div class="octave-toggle on" id="octUpper" title="Upper octave">U</div>
+    </div>
+  </div>
+
+  <!-- Right panel: Hidden notes box -->
+  <div class="side-panel right">
+    <div class="panel-title">Add note</div>
+    <div class="note-box" id="noteBox"></div>
+  </div>
+
+  <!-- Now playing -->
+  <div class="nowplaying">
+    <div class="np-label">Now playing</div>
+    <div class="np-note" id="npNote">—</div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js" crossorigin="anonymous"></script>
+<script type="module">
+import { HandLandmarker, FilesetResolver }
+  from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs";
+const Tone = window.Tone;
+
+// ── DOM refs ──────────────────────────────────────────────────────────────────
+const video    = document.getElementById('video');
+const canvas   = document.getElementById('canvas');
+const ctx      = canvas.getContext('2d');
+const startBtn = document.getElementById('startBtn');
+const startOverlay = document.getElementById('startOverlay');
+const npNote   = document.getElementById('npNote');
+const tValEl   = document.getElementById('tVal');
+const tScaleEl = document.getElementById('tScale');
+const noteBoxEl= document.getElementById('noteBox');
+const octLowerEl = document.getElementById('octLower');
+const octUpperEl = document.getElementById('octUpper');
+const infoBtn      = document.getElementById('infoBtn');
+const infoNudge    = document.getElementById('infoNudge');
+const infoNudgeClose = document.getElementById('infoNudgeClose');
+
+let landmarker = null, running = false;
+let lastVideoTime = -1, frameCount = 0, lastFpsTime = performance.now();
+
+// ── Sargam definition ─────────────────────────────────────────────────────────
+// 12 swaras mapped to semitone offsets from Sa (= 0)
+const ALL_SWARAS = [
+  { id:'S',  label:'S',  semi:0,  display:'S'  },  // Sa
+  { id:'r',  label:'r',  semi:1,  display:'r'  },  // Komal Re
+  { id:'R',  label:'R',  semi:2,  display:'R'  },  // Shuddha Re
+  { id:'g',  label:'g',  semi:3,  display:'g'  },  // Komal Ga
+  { id:'G',  label:'G',  semi:4,  display:'G'  },  // Shuddha Ga
+  { id:'m',  label:'m',  semi:5,  display:'m'  },  // Shuddha Ma
+  { id:'M',  label:'M',  semi:6,  display:'M'  },  // Teevra Ma
+  { id:'P',  label:'P',  semi:7,  display:'P'  },  // Pa
+  { id:'d',  label:'d',  semi:8,  display:'d'  },  // Komal Dha
+  { id:'D',  label:'D',  semi:9,  display:'D'  },  // Shuddha Dha
+  { id:'n',  label:'n',  semi:10, display:'n'  },  // Komal Ni
+  { id:'N',  label:'N',  semi:11, display:'N'  },  // Shuddha Ni
+];
+
+// Default visible: basic sargam S R G m P D N (two octaves each)
+const DEFAULT_VISIBLE = new Set(['S','R','G','m','P','D','N']);
+
+// State: which swara IDs are currently on the main row
+let visibleIds = new Set(DEFAULT_VISIBLE);
+
+// Two octaves: lower (oct 0) and upper (oct 1)
+// Sa root = MIDI note. Default: C3 = midi 48
+const SA_ROOT_DEFAULT = 48; // C3
+let transpose = 0; // semitone offset, range -6..+6
+let lowerOctaveOn = true; // "L" toggle — show lower octave row
+let upperOctaveOn = true; // "U" toggle — show upper octave row (and S'' if S visible)
+
+const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+
+function semiToToneNote(semi) {
+  // semi = absolute semitone (0 = C0 in MIDI sense offset)
+  const midi = SA_ROOT_DEFAULT + transpose + semi;
+  const oct  = Math.floor(midi / 12) - 1;
+  const name = NOTE_NAMES[midi % 12];
+  return `${name}${oct}`;
+}
+
+function saName() {
+  const midi = SA_ROOT_DEFAULT + transpose;
+  return NOTE_NAMES[midi % 12];
+}
+
+// Build the active note list for the row: lower octave, upper octave, then S'' (highest Sa)
+function buildActiveNotes() {
+  const notes = [];
+  // Lower octave: all visible swaras (only if L toggle is on)
+  if (lowerOctaveOn) {
+    for (const sw of ALL_SWARAS) {
+      if (!visibleIds.has(sw.id)) continue;
+      notes.push({ swara: sw, octave: 0, toneNote: semiToToneNote(sw.semi),      label: sw.display,        upper: false });
+    }
+  }
+  // Upper octave: all visible swaras (only if U toggle is on)
+  if (upperOctaveOn) {
+    for (const sw of ALL_SWARAS) {
+      if (!visibleIds.has(sw.id)) continue;
+      notes.push({ swara: sw, octave: 1, toneNote: semiToToneNote(sw.semi + 12), label: sw.display + "'",   upper: true  });
+    }
+  }
+  // Capstone Sa: always one octave above whichever row is currently topmost —
+  // S'' above the upper row when U is on, or S' above the lower row when only L is on.
+  if (visibleIds.has('S')) {
+    const topmostOctave = upperOctaveOn ? 1 : 0;
+    const capstoneOctave = topmostOctave + 1;
+    const capstoneLabel  = capstoneOctave === 1 ? "S'" : 'S"';
+    notes.push({ swara: ALL_SWARAS[0], octave: capstoneOctave, toneNote: semiToToneNote(capstoneOctave * 12), label: capstoneLabel, upper: true });
+  }
+  return notes;
+}
+
+// ── Transpose UI ──────────────────────────────────────────────────────────────
+function updateTransposeUI() {
+  tValEl.textContent  = (transpose >= 0 ? '+' : '') + transpose;
+  tScaleEl.textContent = `Sa = ${saName()}`;
+  document.getElementById('tUp').disabled   = transpose >= 6;
+  document.getElementById('tDown').disabled = transpose <= -6;
+}
+
+document.getElementById('tUp').addEventListener('click', () => {
+  if (transpose < 6) { transpose++; updateTransposeUI(); releaseNote(); }
+});
+document.getElementById('tDown').addEventListener('click', () => {
+  if (transpose > -6) { transpose--; updateTransposeUI(); releaseNote(); }
+});
+
+// ── Octave toggles ────────────────────────────────────────────────────────────
+function updateOctaveUI() {
+  octLowerEl.classList.toggle('on', lowerOctaveOn);
+  octLowerEl.classList.toggle('off', !lowerOctaveOn);
+  octLowerEl.classList.toggle('locked', lowerOctaveOn && !upperOctaveOn);
+  octUpperEl.classList.toggle('on', upperOctaveOn);
+  octUpperEl.classList.toggle('off', !upperOctaveOn);
+  octUpperEl.classList.toggle('locked', upperOctaveOn && !lowerOctaveOn);
+}
+octLowerEl.addEventListener('click', () => {
+  if (lowerOctaveOn && !upperOctaveOn) return; // keep at least one octave on
+  lowerOctaveOn = !lowerOctaveOn;
+  updateOctaveUI();
+  releaseNote();
+});
+octUpperEl.addEventListener('click', () => {
+  if (upperOctaveOn && !lowerOctaveOn) return; // keep at least one octave on
+  upperOctaveOn = !upperOctaveOn;
+  updateOctaveUI();
+  releaseNote();
+});
+
+// ── Note box (hidden notes) ───────────────────────────────────────────────────
+function rebuildNoteBox() {
+  noteBoxEl.innerHTML = '';
+  for (const sw of ALL_SWARAS) {
+    if (visibleIds.has(sw.id)) continue;
+    const el = document.createElement('div');
+    el.className = 'box-note';
+    el.textContent = sw.display;
+    el.title = `Add ${sw.id} to main row`;
+    el.addEventListener('click', () => {
+      visibleIds.add(sw.id);
+      rebuildNoteBox();
+    });
+    noteBoxEl.appendChild(el);
+  }
+}
+
+// ── Tone.js synth ─────────────────────────────────────────────────────────────
+// Two independent PolySynth instances — one per detected hand — so each hand
+// can hold its own note and its own Y-position volume simultaneously, while
+// sharing the same chorus/reverb bus for a cohesive sound.
+let synths = [null, null], audioReady = false;
+
+async function initAudio() {
+  if (audioReady) return;
+  await Tone.start();
+  await Tone.getContext().resume();
+  const reverb = new Tone.Reverb({ decay: 3.2, wet: 0.4 }).toDestination();
+  await reverb.ready;
+  const chorus = new Tone.Chorus(3, 2, 0.25).connect(reverb).start();
+  for (let i = 0; i < 2; i++) {
+    synths[i] = new Tone.PolySynth(Tone.Synth, {
+      oscillator: { type: 'sine' },
+      envelope: { attack: 0.07, decay: 0.15, sustain: 0.65, release: 1.6 },
+      volume: -4 // fallback level until first hand frame sets real Y-based volume
+    }).connect(chorus);
+  }
+  audioReady = true;
+  log('Audio ready · 2× PolySynth (per-hand) + Reverb + Chorus', 'ok');
+}
+
+// ── Note state (per hand: index 0 and 1) ────────────────────────────────────────
+let activeNotes     = [null, null];  // Tone.js note string per hand
+let activeSwaraKeys = [null, null];  // "id_octave" string per hand, for circle hit detection
+let handScreenX     = [null, null];  // each hand's on-screen X this frame, for left/right ordering in now-playing
+
+function triggerNote(handIdx, toneNote, swaraKey, swaraLabel) {
+  if (!audioReady || !synths[handIdx]) return;
+  if (activeSwaraKeys[handIdx] === swaraKey) return;
+  if (activeNotes[handIdx]) synths[handIdx].triggerRelease(activeNotes[handIdx], Tone.now());
+  synths[handIdx].triggerAttack(toneNote, Tone.now());
+  activeNotes[handIdx]     = toneNote;
+  activeSwaraKeys[handIdx] = swaraKey;
+  updateNowPlaying();
+  log(`▶ ${swaraLabel}  (${toneNote})  · hand ${handIdx + 1}`, 'ok');
+}
+
+function releaseNote(handIdx) {
+  if (handIdx === undefined) { releaseNote(0); releaseNote(1); return; }
+  if (!audioReady || !synths[handIdx] || !activeNotes[handIdx]) return;
+  synths[handIdx].triggerRelease(activeNotes[handIdx], Tone.now());
+  activeNotes[handIdx] = null; activeSwaraKeys[handIdx] = null;
+  updateNowPlaying();
+}
+
+function updateNowPlaying() {
+  // Pair each active hand's note with its current on-screen X, then sort left→right
+  // so the display reflects true hand position, not detection-slot order (which can
+  // flicker/swap frame to frame even when the hands themselves haven't moved).
+  const entries = activeNotes
+    .map((note, idx) => ({ note, x: handScreenX[idx] }))
+    .filter(e => e.note !== null);
+  entries.sort((a, b) => (a.x ?? 0) - (b.x ?? 0));
+  const labels = entries.map(e => e.note); // activeNotes already holds transpose-adjusted Western note strings, e.g. "C#4"
+  npNote.textContent = labels.length ? labels.join('  ·  ') : '—';
+}
+
+// ── Logging ───────────────────────────────────────────────────────────────────
+function log(msg, type = 'info') {
+  // Bottom log ribbon removed from the UI — kept as a no-op so existing call
+  // sites throughout the file don't need to be touched individually.
+}
+
+function setPill(id, text, cls) {
+  // Top status-pill ribbon removed from the UI — kept as a no-op so existing
+  // call sites (camera/model/FPS/hand-count updates) don't need to be touched individually.
+}
+
+// ── Model loading ─────────────────────────────────────────────────────────────
+async function loadModel() {
+  log('Loading MediaPipe WASM…', 'info');
+  setPill('s-model', 'Model: loading…', 'warn');
+  const tryLoad = async (delegate) => {
+    const vision = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    );
+    return HandLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+        delegate
+      },
+      runningMode: "VIDEO", numHands: 2,
+      minHandDetectionConfidence: 0.5,
+      minHandPresenceConfidence: 0.5,
+      minTrackingConfidence: 0.5
+    });
+  };
+  try {
+    landmarker = await tryLoad("GPU");
+    log('HandLandmarker ready (GPU)', 'ok');
+    setPill('s-model', 'Model: ready ✓', 'ok');
+  } catch(e) {
+    log('GPU failed, trying CPU…', 'warn');
+    try {
+      landmarker = await tryLoad("CPU");
+      log('HandLandmarker ready (CPU)', 'ok');
+      setPill('s-model', 'Model: ready (CPU) ✓', 'ok');
+    } catch(e2) {
+      log('Model load FAILED: ' + e2.message, 'err');
+      setPill('s-model', 'Model: FAILED', 'error'); return;
+    }
+  }
+  startBtn.disabled = false;
+}
+
+// ── Camera start ──────────────────────────────────────────────────────────────
+startBtn.addEventListener('click', async () => {
+  startBtn.disabled = true;
+  await initAudio();  // Tone.start() is inside, awaited properly
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }
+    });
+    video.srcObject = stream;
+    await new Promise(r => { video.onloadedmetadata = r; });
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    log(`Camera on: ${video.videoWidth}×${video.videoHeight}`, 'ok');
+    setPill('s-camera', 'Camera: on ✓', 'ok');
+    startOverlay.style.display = 'none';
+    running = true;
+    requestAnimationFrame(detect);
+    showInfoNudge();
+  } catch(e) {
+    log('Camera error: ' + e.message, 'err');
+    setPill('s-camera', 'Camera: denied', 'error');
+    startBtn.disabled = false;
+  }
+});
+
+// ── Landmark constants ────────────────────────────────────────────────────────
+const INDEX_TIP=8, MIDDLE_TIP=12;
+const THUMB_TIP=4, RING_TIP=16, PINKY_TIP=20;
+const INDEX_MCP=5, MIDDLE_MCP=9, RING_MCP=13, PINKY_MCP=17;
+
+function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+
+const CONN=[
+  [0,1],[1,2],[2,3],[3,4],
+  [0,5],[5,6],[6,7],[7,8],
+  [0,9],[9,10],[10,11],[11,12],
+  [0,13],[13,14],[14,15],[15,16],
+  [0,17],[17,18],[18,19],[19,20],
+  [5,9],[9,13],[13,17]
+];
+
+// ── Sargam circle layout ──────────────────────────────────────────────────────
+// Circles drawn on canvas at a fixed Y band (centre of frame vertically)
+const CIRCLE_R    = 28;   // radius of each note circle (fixed, does not scale)
+const CIRCLE_Y    = 0.5;  // vertical centre as fraction of canvas height
+const PANEL_MARGIN = 115; // left and right panel widths to avoid overlap
+
+// ── Y-position volume control ──────────────────────────────────────────────────
+const VOL_MAX_DB = 0;     // top of screen = full volume
+const VOL_MIN_DB = -30;   // bottom of screen = near-silent floor
+const VOL_RAMP_S = 0.08;  // smoothing time (s) per frame update — avoids zipper noise
+
+// Returns array of {x, y, r, note} for current visible notes
+// Gap spacing is dynamic based on number of notes
+function getNoteCircles() {
+  const W = canvas.width, H = canvas.height;
+  const notes = buildActiveNotes();
+  const n = notes.length;
+  if (n === 0) return [];
+
+  // Available width = full width minus left and right panel margins
+  const availableWidth = W - (PANEL_MARGIN * 2);
+  
+  // Each note occupies: circle diameter (2*R) + dynamic gap
+  // Total needed for circles: n * (2*R)
+  const totalCircleWidth = n * CIRCLE_R * 2;
+  
+  // Remaining space for gaps: availableWidth - totalCircleWidth
+  // Distributed among (n-1) gaps between notes, plus margins on edges
+  const totalGapSpace = availableWidth - totalCircleWidth;
+  const gapPerSpace = totalGapSpace / (n + 1); // n+1 spaces (edges + between)
+  
+  let x = PANEL_MARGIN + gapPerSpace + CIRCLE_R; // start position
+  const y = H * CIRCLE_Y;
+
+  const rawCircles = notes.map((note, i) => {
+    const cx = x;
+    // Move to next position: circle diameter + gap to next circle
+    x += CIRCLE_R * 2 + gapPerSpace;
+    return { cx, cy: y, r: CIRCLE_R, note };
+  });
+
+  // Assign each circle a trigger "box" spanning the midpoint to its neighbours —
+  // boxes are contiguous and cover the full playable width with no gaps.
+  const leftEdge  = PANEL_MARGIN;
+  const rightEdge = W - PANEL_MARGIN;
+  for (let i = 0; i < rawCircles.length; i++) {
+    const c = rawCircles[i];
+    c.boxLeft  = i === 0 ? leftEdge  : (rawCircles[i - 1].cx + c.cx) / 2;
+    c.boxRight = i === rawCircles.length - 1 ? rightEdge : (c.cx + rawCircles[i + 1].cx) / 2;
+  }
+  return rawCircles;
+}
+
+// ── Per-note trigger bars ────────────────────────────────────────────────────────
+// Each note's box renders as ONE solid glossy bar — bright down the centre,
+// tapering smoothly toward its own edges, with a soft blended fade into the seam
+// separating it from its neighbours (reference: one bar per note, not multiple
+// fringes per box, with blended rather than hard edges).
+// Masks are cached per box width since layout only changes on transpose/add-note/
+// octave-toggle, not every frame.
+const BAR_BLEND_FRAC = 0.22; // fraction of box width used as the soft fade-in/out zone on each side
+const BAR_BASE_FILL  = 0.4;  // minimum brightness across the bar's flat body (keeps it "solid", not a sliver)
+const fringeMaskCache = new Map();
+
+// Smootherstep easing (Ken Perlin's improved smoothstep) — zero first AND second
+// derivative at both ends, so the fade-in/out has no visible "kink" where it meets
+// the flat plateau or the fully-dark seam.
+function smootherstep(edge0, edge1, x) {
+  if (edge0 === edge1) return x < edge0 ? 0 : 1;
+  let t = Math.min(1, Math.max(0, (x - edge0) / (edge1 - edge0)));
+  return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+function getFringeMask(width, height) {
+  const wKey = Math.round(width);
+  const cacheKey = wKey + 'x' + height;
+  let mask = fringeMaskCache.get(cacheKey);
+  if (mask) return mask;
+
+  mask = document.createElement('canvas');
+  mask.width = Math.max(1, wKey);
+  mask.height = height;
+  const mctx = mask.getContext('2d');
+  const imgData = mctx.createImageData(mask.width, 1);
+
+  for (let x = 0; x < mask.width; x++) {
+    const t = x / mask.width; // 0..1 across the whole box
+    // Trapezoid presence envelope: smooth rise from the left seam, flat plateau,
+    // smooth fall into the right seam — no hard step anywhere.
+    const rise = smootherstep(0, BAR_BLEND_FRAC, t);
+    const fall = smootherstep(0, BAR_BLEND_FRAC, 1 - t);
+    const presence = Math.min(rise, fall);
+    const glossHighlight = Math.sin(Math.PI * t); // bright centre, soft taper — glossy cylinder look
+    const alpha = presence * (BAR_BASE_FILL + (1 - BAR_BASE_FILL) * glossHighlight);
+    const idx = x * 4;
+    imgData.data[idx]     = 200; // R (lavender tone)
+    imgData.data[idx + 1] = 184; // G
+    imgData.data[idx + 2] = 248; // B
+    imgData.data[idx + 3] = Math.round(alpha * 255);
+  }
+  mctx.putImageData(imgData, 0, 0);
+  // Stretch the 1px-tall row into a full-height column band
+  mctx.drawImage(mask, 0, 0, mask.width, 1, 0, 0, mask.width, height);
+
+  fringeMaskCache.set(cacheKey, mask);
+  return mask;
+}
+
+function drawSargamCircles(circles, hoverKeys) {
+  const H = canvas.height;
+
+  for (const c of circles) {
+    const key = c.note.swara.id + '_' + c.note.octave;
+    const isActive  = activeSwaraKeys.includes(key);
+    const isHovered = hoverKeys.includes(key);
+
+    // ── Interference-fringe trigger band, full canvas height ──
+    const mask = getFringeMask(c.boxRight - c.boxLeft, H);
+    const brightness = isActive ? 1.0 : isHovered ? 0.6 : c.note.upper ? 0.22 : 0.3;
+    ctx.save();
+    ctx.globalAlpha = brightness;
+    ctx.drawImage(mask, c.boxLeft, 0);
+    ctx.restore();
+
+    // ── Circle ──
+    if (isActive) {
+      ctx.fillStyle = 'rgba(200,184,248,0.92)';
+    } else if (isHovered) {
+      ctx.fillStyle = 'rgba(100,80,200,0.55)';
+    } else {
+      ctx.fillStyle = c.note.upper
+        ? 'rgba(20,16,50,0.7)'
+        : 'rgba(14,10,38,0.78)';
+    }
+
+    ctx.strokeStyle = isActive
+      ? '#c8b8f8'
+      : isHovered
+        ? '#8070d8'
+        : c.note.upper ? 'rgba(100,80,180,0.5)' : 'rgba(80,60,160,0.7)';
+    ctx.lineWidth = isActive ? 3 : isHovered ? 2 : 1.5;
+
+    ctx.beginPath();
+    ctx.arc(c.cx, c.cy, c.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = isActive ? '#1a0f40' : isHovered ? '#e0d8ff' : '#b0a0e0';
+    ctx.font = `${c.note.upper ? 500 : 600} ${c.note.upper ? 13 : 15}px 'Segoe UI', system-ui`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(c.note.label, c.cx, c.cy);
+
+    // Tap-to-hide hint
+    if (isHovered && !isActive) {
+      ctx.fillStyle = 'rgba(180,160,255,0.4)';
+      ctx.font = '10px system-ui';
+      ctx.fillText('tap to hide', c.cx, c.cy + c.r + 12);
+    }
+  }
+}
+
+function drawHand(lm, pinched, hoverCircle, colors) {
+  const W = canvas.width, H = canvas.height;
+  const mx = x => (1 - x) * W;
+  const my = y => y * H;
+  const c = colors || HAND_DOT_COLORS[0];
+
+  ctx.strokeStyle = pinched ? c.skeleton : c.skeletonIdle;
+  ctx.lineWidth = 2;
+  for (const [a,b] of CONN) {
+    ctx.beginPath();
+    ctx.moveTo(mx(lm[a].x), my(lm[a].y));
+    ctx.lineTo(mx(lm[b].x), my(lm[b].y));
+    ctx.stroke();
+  }
+
+  const ixW = mx(lm[INDEX_TIP].x),  ixH = my(lm[INDEX_TIP].y);
+  const mxW = mx(lm[MIDDLE_TIP].x), mxH = my(lm[MIDDLE_TIP].y);
+  const dx = mxW - ixW, dy = mxH - ixH;
+  const OFFSET = 0.12;
+  const ixOx = ixW + dx*OFFSET, ixOy = ixH + dy*OFFSET;
+  const mxOx = mxW - dx*OFFSET, mxOy = mxH - dy*OFFSET;
+
+  for (let i = 0; i < lm.length; i++) {
+    const isIndex  = i === INDEX_TIP;
+    const isMiddle = i === MIDDLE_TIP;
+    let x, y;
+    if (isIndex)       { x = ixOx; y = ixOy; }
+    else if (isMiddle) { x = mxOx; y = mxOy; }
+    else               { x = mx(lm[i].x); y = my(lm[i].y); }
+    ctx.beginPath();
+    ctx.arc(x, y, isMiddle ? 9 : isIndex ? 7 : 4, 0, Math.PI*2);
+    ctx.fillStyle = isMiddle
+      ? (pinched ? c.pinched : c.idle)
+      : isIndex ? '#9080d0' : '#fff';
+    ctx.fill();
+  }
+
+  if (pinched) {
+    ctx.strokeStyle='#e09c3a'; ctx.lineWidth=3; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(ixOx,ixOy); ctx.lineTo(mxOx,mxOy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Guide line from middle tip to nearest circle when hovering
+  if (hoverCircle) {
+    ctx.strokeStyle = 'rgba(180,160,255,0.25)';
+    ctx.lineWidth = 1; ctx.setLineDash([3,5]);
+    ctx.beginPath(); ctx.moveTo(mxOx, mxOy);
+    ctx.lineTo(hoverCircle.cx, hoverCircle.cy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// ── Hit test ──────────────────────────────────────────────────────────────────
+// Hits the circle itself OR anywhere within its fringe trigger box (boxLeft..boxRight)
+function hitTestCircle(px, py, circles) {
+  const CIRCLE_HIT_R = CIRCLE_R * 1.35;
+  let best = null, bestDist = Infinity;
+
+  for (const c of circles) {
+    // Circle hit (takes priority — smaller effective distance)
+    const dCircle = Math.hypot(px - c.cx, py - c.cy);
+    if (dCircle < CIRCLE_HIT_R && dCircle < bestDist) {
+      best = c; bestDist = dCircle; continue;
+    }
+    // Box hit — anywhere within this note's fringe band
+    if (px >= c.boxLeft && px < c.boxRight) {
+      const dX = Math.abs(px - c.cx);
+      if (dX < bestDist) { best = c; bestDist = dX; }
+    }
+  }
+  return best;
+}
+
+// ── Canvas click → toggle note visibility ─────────────────────────────────────
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width  / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const px = (e.clientX - rect.left) * scaleX;
+  const py = (e.clientY - rect.top)  * scaleY;
+  const circles = getNoteCircles();
+  const hit = hitTestCircle(px, py, circles);
+  if (hit) {
+    visibleIds.delete(hit.note.swara.id);
+    rebuildNoteBox();
+    releaseNote();
+  }
+});
+
+// ── Detection loop ────────────────────────────────────────────────────────────
+const HAND_DOT_COLORS = [
+  { pinched: '#e09c3a', idle: '#c8b8f8', skeleton: '#a990f5', skeletonIdle: '#4caf7d' }, // hand 1 (existing palette)
+  { pinched: '#3ac6e0', idle: '#8fe0d8', skeleton: '#3ac6e0', skeletonIdle: '#2f9e8a' }  // hand 2 (teal, visually distinct)
+];
+
+function detect(now) {
+  if (!running) return;
+  requestAnimationFrame(detect);
+  if (!landmarker || video.readyState < 2) return;
+  if (video.currentTime === lastVideoTime) return;
+  lastVideoTime = video.currentTime;
+
+  const result = landmarker.detectForVideo(video, now);
+
+  frameCount++;
+  if (now - lastFpsTime > 1000) {
+    setPill('s-fps', `FPS: ${frameCount}`, frameCount > 15 ? 'ok' : 'warn');
+    frameCount = 0; lastFpsTime = now;
+  }
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const handList = result.landmarks || [];
+  const n = handList.length;
+  setPill('s-hands', `Hands: ${n}`, n > 0 ? 'active' : '');
+
+  const circles = getNoteCircles();
+
+  // Release any hand slot that no longer has a detected hand this frame
+  for (let i = n; i < 2; i++) { releaseNote(i); handScreenX[i] = null; }
+
+  if (n === 0) {
+    drawSargamCircles(circles, []);
+    return;
+  }
+
+  const W = canvas.width, H = canvas.height;
+  const hoverKeys = [];
+
+  // First pass: compute hover state for all hands (needed before drawing circles)
+  const perHand = handList.slice(0, 2).map((lm) => {
+    const pd = dist(lm[INDEX_TIP], lm[MIDDLE_TIP]);
+    const pinched = pd < 0.028;
+    const mxCanvas = (1 - lm[MIDDLE_TIP].x) * W;
+    const myCanvas = lm[MIDDLE_TIP].y * H;
+    const ixWc = (1 - lm[INDEX_TIP].x) * W, ixHc = lm[INDEX_TIP].y * H;
+    const ddx = mxCanvas - ixWc, ddy = myCanvas - ixHc;
+    const mxOx = mxCanvas - ddx * 0.12, mxOy = myCanvas - ddy * 0.12;
+    const hitCircle = hitTestCircle(mxOx, mxOy, circles);
+    const hoverKey = hitCircle ? hitCircle.note.swara.id + '_' + hitCircle.note.octave : null;
+    if (hoverKey) hoverKeys.push(hoverKey);
+    return { lm, pinched, mxOx, mxOy, hitCircle, hoverKey };
+  });
+
+  drawSargamCircles(circles, hoverKeys);
+
+  perHand.forEach((h, idx) => {
+    handScreenX[idx] = h.mxOx; // on-screen X this frame, used to sort left/right in now-playing
+
+    // Continuous Y-position → this hand's own volume (tracks even while hovering)
+    if (audioReady && synths[idx]) {
+      const yNorm = Math.min(1, Math.max(0, h.lm[MIDDLE_TIP].y));
+      const targetDb = VOL_MAX_DB + (VOL_MIN_DB - VOL_MAX_DB) * yNorm;
+      synths[idx].volume.rampTo(targetDb, VOL_RAMP_S);
+    }
+
+    drawHand(h.lm, h.pinched, h.hitCircle || null, HAND_DOT_COLORS[idx]);
+
+    if (h.pinched && h.hitCircle) {
+      triggerNote(idx, h.hitCircle.note.toneNote, h.hoverKey,
+                  h.hitCircle.note.label + (h.hitCircle.note.upper ? '' : ''));
+    } else if (!h.pinched) {
+      releaseNote(idx);
+    }
+  });
+}
+
+// ── Info nudge (points at the "i" button after camera starts) ─────────────────
+let infoNudgeTimer = null;
+
+function showInfoNudge() {
+  infoNudge.classList.remove('hidden', 'fading');
+  clearTimeout(infoNudgeTimer);
+  infoNudgeTimer = setTimeout(hideInfoNudge, 5000);
+}
+function hideInfoNudge() {
+  clearTimeout(infoNudgeTimer);
+  infoNudge.classList.add('fading');
+  setTimeout(() => infoNudge.classList.add('hidden'), 300); // wait for fade-out animation
+}
+infoNudgeClose.addEventListener('click', hideInfoNudge);
+
+// Learn button — opens the "How to play" modal, dismissing the nudge if still showing
+const modalOverlay = document.getElementById('modalOverlay');
+const modalClose    = document.getElementById('modalClose');
+
+function openLearnModal()  { modalOverlay.classList.add('open'); }
+function closeLearnModal() { modalOverlay.classList.remove('open'); }
+
+infoBtn.addEventListener('click', () => {
+  hideInfoNudge();
+  openLearnModal();
+});
+modalClose.addEventListener('click', closeLearnModal);
+modalOverlay.addEventListener('click', (e) => {
+  if (e.target === modalOverlay) closeLearnModal(); // click on backdrop, not the modal card itself
+});
+
+// About button — opens the "Why these tools exist" modal
+const aboutBtn      = document.getElementById('aboutBtn');
+const aboutOverlay  = document.getElementById('aboutOverlay');
+const aboutModalClose = document.getElementById('aboutModalClose');
+
+function openAboutModal()  { aboutOverlay.classList.add('open'); }
+function closeAboutModal() { aboutOverlay.classList.remove('open'); }
+
+aboutBtn.addEventListener('click', openAboutModal);
+aboutModalClose.addEventListener('click', closeAboutModal);
+aboutOverlay.addEventListener('click', (e) => {
+  if (e.target === aboutOverlay) closeAboutModal();
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') { closeLearnModal(); closeAboutModal(); }
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+updateTransposeUI();
+updateOctaveUI();
+rebuildNoteBox();
+loadModel();
+</script>
+</body>
+</html>
