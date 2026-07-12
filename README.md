@@ -13,7 +13,7 @@ No keys, no strings, no MIDI controller — just a webcam, your fingers, and Hin
 
 ## What is this?
 
-Airboard turns your webcam into an air instrument. It tracks your hands in real time, maps a pinch gesture to note-triggering, and synthesizes Sargam swaras (S R G m P D N — the Indian classical solfège, roughly analogous to Do Re Mi) live in the browser. No installs, no backend — it's a single `.html` file that runs entirely client-side.
+SPACEBOARD turns your webcam into an air instrument. It tracks your hands in real time, maps a pinch gesture to note-triggering, and synthesizes Sargam swaras (S R G m P D N — the Indian classical solfège, roughly analogous to Do Re Mi) live in the browser. No installs, no backend — it's a single `.html` file that runs entirely client-side.
 
 I built this because I wanted to see if the raga system — something I've always related to more by feel than by theory — could be played with gesture instead of a keyboard. Turns out, yes. And it's genuinely fun.
 
@@ -54,8 +54,8 @@ First time playing? Hide everything except S R G, pinch to sound one note, and g
 Since it's a single HTML file with no build step, all you need is a local server (opening the file directly won't work — camera access requires a proper origin):
 
 ```bash
-git clone https://github.com/<your-username>/AIRBOARD.git
-cd AIRBOARD
+git clone https://github.com/<your-username>/SPACEBOARD.git
+cd SPACEBOARD
 python -m http.server 8080
 ```
 
