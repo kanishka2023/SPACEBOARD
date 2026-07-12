@@ -1,4 +1,4 @@
-# 🎼 AIRBOARD
+# 🎼 SPACEBOARD
 
 **Where melody stays on your fingertips**
 
