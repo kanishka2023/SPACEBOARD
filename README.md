@@ -2,9 +2,7 @@
 
 ***Where melody stays on your fingertips...***
 
-<a href="https://kanishka2023.github.io/SPACEBOARD/" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/play_now-4B0082?style=for-the-badge" >
-</a>
+[![Play Now](https://img.shields.io/badge/!_Play_Now_!-4B0082?style=for-the-badge)](https://kanishka2023.github.io/SPACEBOARD/)
 
 No keys, no strings, no MIDI controller — just a webcam, your fingers, and Hindustani classical Sargam notes floating in space. Pinch a note to sound it, move your hand to control volume, and play with both hands at once, each holding its own note.
 
