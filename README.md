@@ -4,10 +4,10 @@
 
 [![Play Now](https://img.shields.io/badge/!_Play_Now_!-4B0082?style=for-the-badge)](https://kanishka2023.github.io/SPACEBOARD/)
 
-No keys, no strings, no MIDI controller — just a webcam, your fingers, and Hindustani classical Sargam notes floating in space. Pinch a note to sound it, move your hand to control volume, and play with both hands at once, each holding its own note...
+No keys, no strings, no MIDI controller — just a webcam, your fingers, and Hindustani classical Sargam notes floating in space. Pinch a note to sound it, move your hand to control volume, and play with both hands at once, each holding its own note.
 
 ![Made with JavaScript](https://img.shields.io/badge/Made%20with-JavaScript-F7DF1E?logo=javascript&logoColor=black)
-![](https://img.shields.io/badge/Hand_Tracking-MediaPipe-blue)
+![Mediapipe](https://img.shields.io/badge/Hand_Tracking-MediaPipe-blue)
 ![Tone.js](https://img.shields.io/badge/Audio-Tone.js-red)
 
 ---
