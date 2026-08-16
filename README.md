@@ -34,10 +34,12 @@ I built this because I wanted to see if the ROLI Seaboard's note-bending concept
 - **Glossy, contiguous note bars** — each note's hit-zone renders as a single soft-edged bar using a smootherstep-based gloss mask, rather than hard-edged boxes, so the whole playable row reads as one continuous surface.
 - **Canvas mirroring** is handled in JS math (not CSS transforms) so hand landmarks line up exactly with what's drawn, with no coordinate drift.
 
-## 🔭 What's next?
+##  What's next?
 
-- **Portamento / pitch glide** — ROLI Seaboard-style smooth pitch bending between notes, instead of discrete note snapping.
-- Demo GIFs and an embedded walkthrough video in the in-app Learn modal.
+-  🎸 More instrument patches
+-  🎙️ Audio recording
+-  🎼 Western music notation support
+-  🎹 Portamento / pitch glide (ROLI Seaboard-style smooth pitch bending)
 
 ## 🙏 Story Behind...
 
